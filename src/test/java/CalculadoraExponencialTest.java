@@ -1,6 +1,7 @@
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Duration;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,16 +22,30 @@ public class CalculadoraExponencialTest {
     @BeforeEach
     public void setUp() {
         ChromeOptions options = new ChromeOptions();
-        options.addArguments("--headless=new");
+        
+        // COMENTADO O HEADLESS: Agora o navegador vai abrir fisicamente na tela para podermos ver o teste rodar!
+        // options.addArguments("--headless=new"); 
+        
         options.addArguments("--no-sandbox");
         options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--window-size=1920,1080");
+        options.addArguments("--start-maximized"); // Abre o navegador em tela cheia
 
         driver = new ChromeDriver(options);
-        wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
         
-        // 1. Acessar a página http://www.calculadoraonline.com.br/basica
+        // 1. Acessar a página
         driver.get(URL);
+
+        // BYPASS DE COOKIES: Se aparecer o banner de consentimento do Google/LGPD, nós clicamos nele para liberar a tela
+        try {
+            List<WebElement> botoesConsentimento = driver.findElements(By.cssSelector(".fc-button-label, .fc-agree, .cookie-consent"));
+            if (!botoesConsentimento.isEmpty() && botoesConsentimento.get(0).isDisplayed()) {
+                botoesConsentimento.get(0).click();
+                Thread.sleep(1000); // Aguarda sumir o banner
+            }
+        } catch (Exception e) {
+            // Se não aparecer o banner, segue o fluxo normalmente
+        }
     }
 
     @AfterEach
@@ -42,13 +57,13 @@ public class CalculadoraExponencialTest {
     }
 
     private void executarFluxoCalculo(String base, String expoente, String resultadoEsperado) {
-        // 2. Clicar no botão x^n (ID 'b27' na interface básica do site)
+        // 2. Clicar no botão x^n (b27)
         WebElement botaoExp = wait.until(ExpectedConditions.elementToBeClickable(By.id("b27")));
         botaoExp.click();
 
-        // Aguarda a renderização dos inputs dinâmicos na tela
+        // Aguarda os campos ficarem visíveis e prontos para receber texto
         WebElement inputBase = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("bX")));
-        WebElement inputExpoente = driver.findElement(By.id("bN"));
+        WebElement inputExpoente = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("bN")));
         WebElement botaoCalcular = driver.findElement(By.id("bC"));
 
         // 3. Digitar o valor da base (x)
@@ -62,13 +77,16 @@ public class CalculadoraExponencialTest {
         // 5. Clicar em calcular
         botaoCalcular.click();
 
-        // 6. Verificar se o valor resultante equivale ao esperado
+        // Aguarda um instante para o visor atualizar o resultado
+        try { Thread.sleep(500); } catch (InterruptedException e) {}
+
+        // 6. Verificar o valor resultante
         WebElement visorResultado = driver.findElement(By.id("visor"));
         
-        // 6.1. Uso mandatório do getAttribute("value")
+        // 6.1. Uso do getAttribute("value")
         String resultadoObtido = visorResultado.getAttribute("value");
 
-        // 6.2. Validação obrigatória com assertEquals
+        // 6.2. Verificação com assertEquals
         assertEquals(resultadoEsperado, resultadoObtido);
     }
 
@@ -111,5 +129,7 @@ public class CalculadoraExponencialTest {
     public void test8_BaseUmQualquerExpoente() {
         executarFluxoCalculo("1", "99", "1");
     }
-          }
+                                                                       }
+                
+    
           
