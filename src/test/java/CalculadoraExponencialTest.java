@@ -19,8 +19,8 @@ public class CalculadoraExponencialTest {
         options.addArguments("--start-maximized");
         options.addArguments("--disable-notifications");
         driver = new ChromeDriver(options);
-        wait = new WebDriverWait(driver, Duration.ofSeconds(20));
-        driver.get("http://www.calculadoraonline.com.br/basica");
+        wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        driver.get("https://www.calculadoraonline.com.br/basica");
     }
 
     @AfterEach
@@ -28,39 +28,35 @@ public class CalculadoraExponencialTest {
         if (driver != null) driver.quit();
     }
 
-    private void clicarEVerificar(String base, String exp, String esperado) {
-        // 1. Clica no botão de potência (b27)
-        wait.until(ExpectedConditions.elementToBeClickable(By.id("b27"))).click();
+    private void executarFluxo(String base, String exp, String esperado) {
+        wait.until(ExpectedConditions.elementToBeClickable(By.id("b31"))).click();
         
-        // 2. Espera os campos ficarem visíveis e interage
-        WebElement campoBase = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("bX")));
+        WebElement campoBase = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("cx31_0")));
+        WebElement campoExp = driver.findElement(By.id("cx31_1"));
+        
         campoBase.clear();
         campoBase.sendKeys(base);
+        campoExp.clear();
+        campoExp.sendKeys(exp);
         
-        driver.findElement(By.id("bN")).clear();
-        driver.findElement(By.id("bN")).sendKeys(exp);
+        driver.findElement(By.xpath("//div[@id='dpb31']//button[text()='Calcular']")).click();
         
-        // 3. Clica em calcular
-        driver.findElement(By.id("bC")).click();
-        
-        // 4. Aguarda resultado no visor
-        WebElement visor = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("visor")));
-        
-        // Loop de espera para garantir que o texto foi atualizado no visor
+        WebElement visor = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("TIExp")));
         wait.until(d -> !visor.getAttribute("value").isEmpty());
         
         assertEquals(esperado, visor.getAttribute("value").trim());
     }
 
     @Test
-    public void testExponenciacao() {
-        clicarEVerificar("2", "3", "8");
-        clicarEVerificar("5", "0", "1");
-        clicarEVerificar("-3", "2", "9");
-        clicarEVerificar("-2", "3", "-8");
-        clicarEVerificar("4", "-1", "0.25");
-        clicarEVerificar("0", "5", "0");
-        clicarEVerificar("1.5", "2", "2.25");
-        clicarEVerificar("1", "99", "1");
+    public void testExponenciacaoCompleta() {
+        executarFluxo("2", "3", "8");
+        executarFluxo("5", "0", "1");
+        executarFluxo("-3", "2", "9");
+        executarFluxo("-2", "3", "-8");
+        executarFluxo("4", "-1", "0.25");
+        executarFluxo("0", "5", "0");
+        executarFluxo("1.5", "2", "2.25");
+        executarFluxo("1", "99", "1");
     }
-}
+            }
+
